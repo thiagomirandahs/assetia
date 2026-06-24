@@ -17,6 +17,10 @@ class Settings(BaseSettings):
     gemini_api_key: str = ""
     gemini_model: str = "gemini-2.0-flash"
 
+    # Groq (free tier MUITO generoso: console.groq.com/keys)
+    groq_api_key: str = ""
+    groq_model: str = "llama-3.3-70b-versatile"
+
     # JWT
     jwt_secret: str = "dev-secret-troque-em-producao"
     jwt_algorithm: str = "HS256"

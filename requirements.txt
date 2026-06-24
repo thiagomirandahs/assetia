@@ -12,9 +12,10 @@ python-jose[cryptography]>=3.3.0
 passlib[bcrypt]>=1.7.4
 python-multipart>=0.0.12
 
-# IA - suporta os dois providers
+# IA - suporta multiplos providers (use o que tiver chave)
 anthropic>=0.40.0
 google-genai>=0.8.0
+groq>=0.13.0
 
 # Scanner de rede
 manuf>=1.1.5
