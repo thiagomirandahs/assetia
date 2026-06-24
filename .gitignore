@@ -1,0 +1,43 @@
+# Segredos — NUNCA commitar
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+
+# Banco de dados local
+*.sqlite
+*.sqlite-journal
+*.db
+
+# Node / Frontend
+node_modules/
+dist/
+build/
+.vite/
+*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/

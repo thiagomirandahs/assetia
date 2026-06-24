@@ -1,0 +1,50 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: assetia-api
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+psycopg2://assetia:assetia@db:5432/assetia
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - JWT_SECRET=${JWT_SECRET}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    # Pra scanner funcionar, precisa de privilegios de rede (ICMP raw socket)
+    cap_add:
+      - NET_RAW
+      - NET_ADMIN
+
+  db:
+    image: postgres:16-alpine
+    container_name: assetia-db
+    environment:
+      POSTGRES_USER: assetia
+      POSTGRES_PASSWORD: assetia
+      POSTGRES_DB: assetia
+    volumes:
+      - assetia-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U assetia"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: assetia-frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  assetia-data:
