@@ -75,6 +75,67 @@ TOOL_SCHEMAS = [
             },
         },
     },
+
+    # ===== Ferramentas de ACAO (modificam estado) =====
+    {
+        "name": "iniciar_scan_rede",
+        "description": (
+            "Inicia um scan na rede informada (em CIDR). Use quando o usuario pedir 'escaneie a rede', "
+            "'rode um scan agora' ou 'procure novos dispositivos'. Executa SINCRONO (~5-15s para /24)."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "rede": {"type": "string", "description": "Rede em CIDR. Ex: 192.168.1.0/24"},
+            },
+            "required": ["rede"],
+        },
+    },
+    {
+        "name": "marcar_dispositivo_autorizado",
+        "description": (
+            "Marca um dispositivo como AUTORIZADO (adiciona a tag 'autorizado' e identifica o tipo). "
+            "Use quando o usuario disser 'esse dispositivo eh meu', 'autoriza esse', 'reconhece esse IP'."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "device_id": {"type": "integer", "description": "ID do dispositivo (ou use 'ip' como alternativa)"},
+                "ip": {"type": "string", "description": "IP do dispositivo (alternativa ao device_id)"},
+                "tipo": {"type": "string", "description": "Tipo: servidor/estacao/impressora/ap/iot/etc"},
+                "hostname": {"type": "string", "description": "Nome amigavel pra dar ao dispositivo"},
+            },
+        },
+    },
+    {
+        "name": "marcar_alertas_como_lidos",
+        "description": (
+            "Marca alertas como lidos em massa. Use quando o usuario disser 'limpar alertas', "
+            "'marcar tudo como lido' ou similar."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "severidade": {"type": "string", "description": "Filtra por severidade (info|warning|critical). Vazio = todos"},
+                "apenas_recentes_dias": {"type": "integer", "description": "Se informado, so marca alertas dos ultimos N dias"},
+            },
+        },
+    },
+    {
+        "name": "alterar_regra_alerta",
+        "description": (
+            "Ativa ou desativa uma regra de alerta. Use quando o usuario disser "
+            "'desativa o alerta de X', 'para de me avisar sobre Y'."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "regra_id": {"type": "integer", "description": "ID da regra"},
+                "ativa": {"type": "boolean", "description": "true para ativar, false para desativar"},
+            },
+            "required": ["regra_id", "ativa"],
+        },
+    },
 ]
 
 
@@ -103,6 +164,7 @@ def _agora():
 def executar_tool(nome: str, args: dict, *, db: Session, tenant_id: int) -> dict:
     """Despacha a chamada de uma tool. Sempre filtra por tenant_id."""
     handlers = {
+        # consultas
         "buscar_dispositivos": _buscar,
         "contar_dispositivos_por_fabricante": _contar_fabricante,
         "contar_dispositivos_por_so": _contar_so,
@@ -110,6 +172,11 @@ def executar_tool(nome: str, args: dict, *, db: Session, tenant_id: int) -> dict
         "dispositivos_offline_ha_muito_tempo": _offline_antigos,
         "resumo_inventario": _resumo,
         "listar_alertas_recentes": _listar_alertas,
+        # acoes
+        "iniciar_scan_rede": _acao_iniciar_scan,
+        "marcar_dispositivo_autorizado": _acao_marcar_autorizado,
+        "marcar_alertas_como_lidos": _acao_marcar_alertas_lidos,
+        "alterar_regra_alerta": _acao_alterar_regra,
     }
     h = handlers.get(nome)
     if not h:
@@ -222,4 +289,122 @@ def _listar_alertas(args: dict, *, db: Session, tenant_id: int) -> dict:
             }
             for a in items
         ],
+    }
+
+
+# ===== ACOES =====
+
+def _acao_iniciar_scan(args: dict, *, db: Session, tenant_id: int) -> dict:
+    """Roda um scan AGORA (sincrono). Pode demorar ate ~15s para /24."""
+    from ..scanner.scanner import executar_scan
+    from ..core.models import Scan
+    from datetime import datetime, timezone
+
+    rede = args.get("rede")
+    if not rede:
+        return {"erro": "campo 'rede' obrigatorio (ex: 192.168.1.0/24)"}
+
+    scan = Scan(tenant_id=tenant_id, rede=rede, status="rodando")
+    db.add(scan)
+    db.commit()
+    db.refresh(scan)
+
+    try:
+        achados, novos = executar_scan(db, tenant_id=tenant_id, rede=rede)
+        scan.achados = achados
+        scan.novos = novos
+        scan.status = "concluido"
+        scan.finalizado_em = datetime.now(timezone.utc)
+        db.commit()
+        return {
+            "sucesso": True,
+            "scan_id": scan.id,
+            "rede": rede,
+            "dispositivos_encontrados": achados,
+            "dispositivos_novos": novos,
+            "mensagem": f"Scan concluido. Encontrei {achados} dispositivos online ({novos} sao novos).",
+        }
+    except Exception as e:  # noqa: BLE001
+        scan.status = "erro"
+        scan.erro = str(e)
+        db.commit()
+        return {"sucesso": False, "erro": str(e)}
+
+
+def _acao_marcar_autorizado(args: dict, *, db: Session, tenant_id: int) -> dict:
+    """Adiciona tag 'autorizado' e opcionalmente atualiza tipo/hostname."""
+    q = db.query(Device).filter(Device.tenant_id == tenant_id)
+    if args.get("device_id"):
+        d = q.filter(Device.id == int(args["device_id"])).first()
+    elif args.get("ip"):
+        d = q.filter(Device.ip == args["ip"]).first()
+    else:
+        return {"erro": "informe device_id ou ip"}
+
+    if not d:
+        return {"erro": "dispositivo nao encontrado"}
+
+    # Adiciona tag 'autorizado' (sem duplicar)
+    tags = set((d.tags or "").split(",")) - {""}
+    tags.add("autorizado")
+    d.tags = ",".join(sorted(tags))
+
+    alteracoes = []
+    if args.get("tipo"):
+        d.tipo = args["tipo"]
+        alteracoes.append(f"tipo={args['tipo']}")
+    if args.get("hostname"):
+        d.hostname = args["hostname"]
+        alteracoes.append(f"hostname={args['hostname']}")
+
+    db.commit()
+    return {
+        "sucesso": True,
+        "device_id": d.id,
+        "ip": d.ip,
+        "hostname": d.hostname,
+        "tags": d.tags,
+        "alteracoes": alteracoes,
+        "mensagem": f"Dispositivo {d.hostname or d.ip} marcado como autorizado.",
+    }
+
+
+def _acao_marcar_alertas_lidos(args: dict, *, db: Session, tenant_id: int) -> dict:
+    """Marca alertas como lidos em massa, com filtros opcionais."""
+    from ..core.models import Alert
+    from datetime import datetime, timedelta, timezone
+
+    q = db.query(Alert).filter(Alert.tenant_id == tenant_id, Alert.lido.is_(False))
+    if args.get("severidade"):
+        q = q.filter(Alert.severidade == args["severidade"])
+    if args.get("apenas_recentes_dias"):
+        limite = datetime.now(timezone.utc) - timedelta(days=int(args["apenas_recentes_dias"]))
+        q = q.filter(Alert.criado_em >= limite)
+
+    total = q.count()
+    q.update({"lido": True}, synchronize_session=False)
+    db.commit()
+    return {"sucesso": True, "alertas_marcados": total, "mensagem": f"{total} alertas marcados como lidos."}
+
+
+def _acao_alterar_regra(args: dict, *, db: Session, tenant_id: int) -> dict:
+    """Ativa ou desativa uma regra de alerta."""
+    from ..core.models import AlertRule
+
+    regra = db.query(AlertRule).filter(
+        AlertRule.id == int(args["regra_id"]),
+        AlertRule.tenant_id == tenant_id,
+    ).first()
+    if not regra:
+        return {"erro": "regra nao encontrada"}
+
+    regra.ativa = bool(args["ativa"])
+    db.commit()
+    status = "ativada" if regra.ativa else "desativada"
+    return {
+        "sucesso": True,
+        "regra_id": regra.id,
+        "nome": regra.nome,
+        "ativa": regra.ativa,
+        "mensagem": f"Regra '{regra.nome}' foi {status}.",
     }
