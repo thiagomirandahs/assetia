@@ -64,6 +64,17 @@ TOOL_SCHEMAS = [
         "description": "Estatisticas gerais: total de dispositivos, online vs offline, top fabricantes, top SOs.",
         "input_schema": {"type": "object", "properties": {}},
     },
+    {
+        "name": "listar_alertas_recentes",
+        "description": "Lista os alertas mais recentes do sistema. Use para perguntas como 'tem algum alerta?' ou 'o que esta acontecendo de errado?'.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "apenas_nao_lidos": {"type": "boolean", "description": "Se true, so retorna alertas nao lidos (padrao false)"},
+                "limit": {"type": "integer", "description": "Maximo de alertas (padrao 20)"},
+            },
+        },
+    },
 ]
 
 
@@ -98,6 +109,7 @@ def executar_tool(nome: str, args: dict, *, db: Session, tenant_id: int) -> dict
         "dispositivos_novos": _novos,
         "dispositivos_offline_ha_muito_tempo": _offline_antigos,
         "resumo_inventario": _resumo,
+        "listar_alertas_recentes": _listar_alertas,
     }
     h = handlers.get(nome)
     if not h:
@@ -176,10 +188,38 @@ def _resumo(_args, *, db: Session, tenant_id: int) -> dict:
     online = base.filter(Device.online.is_(True)).count()
     top_fab = _contar_fabricante(None, db=db, tenant_id=tenant_id)["por_fabricante"][:5]
     top_so = _contar_so(None, db=db, tenant_id=tenant_id)["por_so"][:5]
+    from ..core.models import Alert
+    alertas_nao_lidos = db.query(Alert).filter(
+        Alert.tenant_id == tenant_id, Alert.lido.is_(False)
+    ).count()
     return {
         "total": total,
         "online": online,
         "offline": total - online,
+        "alertas_nao_lidos": alertas_nao_lidos,
         "top_fabricantes": top_fab,
         "top_sistemas_operacionais": top_so,
+    }
+
+
+def _listar_alertas(args: dict, *, db: Session, tenant_id: int) -> dict:
+    from ..core.models import Alert
+    q = db.query(Alert).filter(Alert.tenant_id == tenant_id)
+    if args.get("apenas_nao_lidos"):
+        q = q.filter(Alert.lido.is_(False))
+    limit = int(args.get("limit", 20))
+    items = q.order_by(Alert.criado_em.desc()).limit(limit).all()
+    return {
+        "total": q.count(),
+        "alertas": [
+            {
+                "id": a.id,
+                "severidade": a.severidade,
+                "titulo": a.titulo,
+                "mensagem": a.mensagem,
+                "lido": a.lido,
+                "criado_em": a.criado_em.isoformat() if a.criado_em else None,
+            }
+            for a in items
+        ],
     }

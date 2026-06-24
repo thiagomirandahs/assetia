@@ -57,6 +57,34 @@ export interface User {
   tenant_id: number;
 }
 
+export interface Alert {
+  id: number;
+  rule_id: number;
+  device_id: number | null;
+  severidade: "info" | "warning" | "critical";
+  titulo: string;
+  mensagem: string;
+  lido: boolean;
+  criado_em: string;
+}
+
+export interface AlertList {
+  total: number;
+  nao_lidos: number;
+  alerts: Alert[];
+}
+
+export interface AlertRule {
+  id: number;
+  nome: string;
+  descricao: string | null;
+  tipo: string;
+  parametros: string | null;
+  severidade: string;
+  canais: string;
+  ativa: boolean;
+}
+
 // ===== chamadas =====
 export const api = {
   login: (email: string, senha: string) =>
@@ -84,5 +112,29 @@ export const api = {
     req<{ resposta: string; tool_calls: { tool: string }[] }>("/chat", {
       method: "POST",
       body: JSON.stringify({ pergunta }),
+    }),
+
+  // ===== Alertas =====
+  listarAlertas: (apenasNaoLidos = false) =>
+    req<AlertList>(`/alerts?apenas_nao_lidos=${apenasNaoLidos}`),
+
+  marcarLido: (id: number) =>
+    req<Alert>(`/alerts/${id}/marcar_lido`, { method: "POST" }),
+
+  marcarTodosLidos: () =>
+    req<{ status: string }>("/alerts/marcar_todos_lidos", { method: "POST" }),
+
+  avaliarAlertas: () =>
+    req<{ avaliadas: number; gerados: number; notificados_email: number; notificados_telegram: number }>(
+      "/alerts/avaliar",
+      { method: "POST" }
+    ),
+
+  listarRegras: () => req<AlertRule[]>("/alerts/regras"),
+
+  alternarRegra: (id: number, ativa: boolean) =>
+    req<AlertRule>(`/alerts/regras/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ ativa }),
     }),
 };

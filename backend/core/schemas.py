@@ -73,7 +73,7 @@ class ChatIn(BaseModel):
 
 class ChatOut(BaseModel):
     resposta: str
-    tool_calls: list[dict] = []  # auditoria — quais ferramentas o agente chamou
+    tool_calls: list[dict] = []
 
 
 class ChatMessageOut(BaseModel):
@@ -82,3 +82,45 @@ class ChatMessageOut(BaseModel):
     role: str
     conteudo: str
     criado_em: datetime
+
+
+# ===== Alerts =====
+class AlertRuleOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    nome: str
+    descricao: str | None
+    tipo: str
+    parametros: str | None
+    severidade: str
+    canais: str
+    ativa: bool
+
+
+class AlertRuleToggleIn(BaseModel):
+    ativa: bool
+
+
+class AlertOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    rule_id: int
+    device_id: int | None
+    severidade: str
+    titulo: str
+    mensagem: str
+    lido: bool
+    criado_em: datetime
+
+
+class AlertListOut(BaseModel):
+    total: int
+    nao_lidos: int
+    alerts: list[AlertOut]
+
+
+class AvaliarAlertasOut(BaseModel):
+    avaliadas: int
+    gerados: int
+    notificados_email: int
+    notificados_telegram: int

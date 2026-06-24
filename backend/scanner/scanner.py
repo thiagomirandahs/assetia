@@ -1,12 +1,16 @@
-"""Orquestrador do scanner: ping sweep + ARP + OUI + persistencia."""
+"""Orquestrador do scanner: ping sweep + ARP + OUI + persistencia + alertas."""
+import logging
 from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
 
+from ..alerts.engine import avaliar_regras_para_tenant
 from ..core.models import Device
 from .arp import ler_tabela_arp
 from .network import ping_sweep_sync
 from .oui import fabricante
+
+logger = logging.getLogger(__name__)
 
 
 def executar_scan(db: Session, *, tenant_id: int, rede: str) -> tuple[int, int]:
@@ -63,5 +67,13 @@ def executar_scan(db: Session, *, tenant_id: int, rede: str) -> tuple[int, int]:
         Device.ultima_visao < agora,
     ).update({"online": False}, synchronize_session=False)
     db.commit()
+
+    # Dispara avaliacao de alertas pos-scan
+    try:
+        res = avaliar_regras_para_tenant(db, tenant_id)
+        if res["gerados_total"]:
+            logger.info("scan gerou %d novos alertas", res["gerados_total"])
+    except Exception as e:  # noqa: BLE001
+        logger.exception("falha ao avaliar alertas pos-scan: %s", e)
 
     return achados, novos

@@ -16,6 +16,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import random
 
+from backend.alerts.engine import avaliar_regras_para_tenant
+from backend.alerts.seed_rules import criar_regras_padrao
 from backend.core.auth import hash_senha
 from backend.core.database import SessionLocal, init_db
 from backend.core.models import Device, Tenant, User
@@ -101,6 +103,14 @@ def main():
         print(f"[OK] Tenant criado:   {tenant.nome} (id={tenant.id})")
         print(f"[OK] Admin criado:    admin@example.com / demo123")
         print(f"[OK] Dispositivos:    {len(devices_seed)} inseridos")
+
+        # Cria regras padrao de alerta e ja roda a avaliacao inicial
+        criadas = criar_regras_padrao(db, tenant.id)
+        print(f"[OK] Regras de alerta: {criadas} criadas")
+
+        res = avaliar_regras_para_tenant(db, tenant.id)
+        print(f"[OK] Alertas gerados: {res['gerados_total']} (de {res['avaliadas']} regras avaliadas)")
+
         print()
         print("Para subir o servidor:  uvicorn backend.main:app --reload")
         print("Para abrir as docs:     http://localhost:8000/docs")
