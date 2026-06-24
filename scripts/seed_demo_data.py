@@ -2,7 +2,7 @@
 
 Cria:
   - 1 tenant 'Demo'
-  - 1 usuario admin (admin@demo.local / demo123)
+  - 1 usuario admin (admin@example.com / demo123)
   - 25 dispositivos variados (servidores, estacoes, impressoras, IoT, switches)
 
 Uso:
@@ -36,7 +36,7 @@ def main():
 
         admin = User(
             tenant_id=tenant.id,
-            email="admin@demo.local",
+            email="admin@example.com",
             senha_hash=hash_senha("demo123"),
             nome="Administrador Demo",
             role="admin",
@@ -99,7 +99,7 @@ def main():
 
         db.commit()
         print(f"[OK] Tenant criado:   {tenant.nome} (id={tenant.id})")
-        print(f"[OK] Admin criado:    admin@demo.local / demo123")
+        print(f"[OK] Admin criado:    admin@example.com / demo123")
         print(f"[OK] Dispositivos:    {len(devices_seed)} inseridos")
         print()
         print("Para subir o servidor:  uvicorn backend.main:app --reload")

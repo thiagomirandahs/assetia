@@ -2,7 +2,7 @@ import { useState } from "react";
 import { api, setToken, User } from "../api";
 
 export default function Login({ onLogin }: { onLogin: (u: User) => void }) {
-  const [email, setEmail] = useState("admin@demo.local");
+  const [email, setEmail] = useState("admin@example.com");
   const [senha, setSenha] = useState("demo123");
   const [erro, setErro] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -63,7 +63,7 @@ export default function Login({ onLogin }: { onLogin: (u: User) => void }) {
         </button>
 
         <p className="text-xs text-slate-500 mt-6 text-center">
-          demo: <span className="font-mono">admin@demo.local / demo123</span>
+          demo: <span className="font-mono">admin@example.com / demo123</span>
         </p>
       </form>
     </div>

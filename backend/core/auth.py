@@ -2,26 +2,30 @@
 from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
+import bcrypt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
 from .config import get_settings
 from .database import get_db
 from .models import User
 
-pwd_ctx = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
 
 def hash_senha(senha: str) -> str:
-    return pwd_ctx.hash(senha)
+    """Gera hash bcrypt. Trunca em 72 bytes (limite do algoritmo)."""
+    senha_bytes = senha.encode("utf-8")[:72]
+    return bcrypt.hashpw(senha_bytes, bcrypt.gensalt()).decode("utf-8")
 
 
 def verificar_senha(senha: str, hash_: str) -> bool:
-    return pwd_ctx.verify(senha, hash_)
+    try:
+        return bcrypt.checkpw(senha.encode("utf-8")[:72], hash_.encode("utf-8"))
+    except (ValueError, TypeError):
+        return False
 
 
 def criar_token(*, user_id: int, tenant_id: int, role: str) -> str:
