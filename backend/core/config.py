@@ -6,9 +6,16 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
+    # LLM provider (auto-detecta se nao definir; aceita 'anthropic' | 'gemini')
+    llm_provider: str = ""
+
     # Anthropic
     anthropic_api_key: str = ""
     anthropic_model: str = "claude-sonnet-4-6"
+
+    # Google Gemini (free tier: aistudio.google.com/apikey)
+    gemini_api_key: str = ""
+    gemini_model: str = "gemini-2.0-flash"
 
     # JWT
     jwt_secret: str = "dev-secret-troque-em-producao"
