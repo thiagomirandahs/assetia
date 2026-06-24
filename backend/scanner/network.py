@@ -24,7 +24,12 @@ def _flags_do_ping() -> list[str]:
 
 
 async def _ping_um(ip: str) -> HostVivo | None:
-    """Retorna HostVivo se respondeu, None se nao."""
+    """Retorna HostVivo SO se realmente recebeu resposta (verifica TTL= na saida).
+
+    O exit code do ping no Windows nao eh 100% confiavel com asyncio — pode dar 0
+    mesmo sem resposta real. Por isso checamos a presenca de 'TTL=' (ou 'ttl=')
+    na saida, que SO aparece em respostas validas.
+    """
     cmd = ["ping", *_flags_do_ping(), ip]
     try:
         proc = await asyncio.create_subprocess_exec(
@@ -36,10 +41,11 @@ async def _ping_um(ip: str) -> HostVivo | None:
     except (asyncio.TimeoutError, FileNotFoundError):
         return None
 
-    if proc.returncode != 0:
+    saida = stdout.decode(errors="ignore")
+    # heuristica robusta: so eh "vivo" se a saida tem 'TTL=' (resposta real)
+    if "TTL=" not in saida and "ttl=" not in saida:
         return None
 
-    saida = stdout.decode(errors="ignore")
     latencia = _extrair_latencia(saida)
     return HostVivo(ip=ip, latencia_ms=latencia)
 
