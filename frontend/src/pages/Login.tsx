@@ -29,9 +29,9 @@ export default function Login({ onLogin }: { onLogin: (u: User) => void }) {
         className="bg-slate-800 border border-slate-700 rounded-xl p-8 w-full max-w-sm shadow-xl"
       >
         <div className="text-center mb-6">
-          <div className="text-4xl mb-2">🛰️</div>
-          <h1 className="text-2xl font-bold">AssetIA</h1>
-          <p className="text-sm text-slate-400 mt-1">Inventário inteligente de TI</p>
+          <div className="text-4xl mb-2">🛡️</div>
+          <h1 className="text-2xl font-bold">ReconIA</h1>
+          <p className="text-sm text-slate-400 mt-1">Pentest com IA</p>
         </div>
 
         <label className="block text-sm text-slate-300 mb-1">E-mail</label>
