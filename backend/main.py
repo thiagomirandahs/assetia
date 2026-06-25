@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .api import alerts, auth, chat, devices, scans
+from .api import alerts, auth, chat, devices, pentest, scans
 from .core.config import get_settings
 from .core.database import init_db
 
@@ -16,9 +16,9 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="AssetIA API",
-    version="0.1.0",
-    description="Inventario inteligente de TI com agente LLM (Claude).",
+    title="ReconIA API",
+    version="0.2.0",
+    description="Plataforma de pentest com IA: descoberta, varredura de portas, CVE e score de risco.",
     lifespan=lifespan,
 )
 
@@ -36,13 +36,14 @@ app.include_router(devices.router, prefix="/api/devices", tags=["devices"])
 app.include_router(scans.router, prefix="/api/scans", tags=["scans"])
 app.include_router(chat.router, prefix="/api/chat", tags=["chat"])
 app.include_router(alerts.router, prefix="/api/alerts", tags=["alerts"])
+app.include_router(pentest.router, prefix="/api/pentest", tags=["pentest"])
 
 
 @app.get("/")
 def root():
     return {
-        "app": "AssetIA",
-        "version": "0.1.0",
+        "app": "ReconIA",
+        "version": "0.2.0",
         "docs": "/docs",
         "status": "ok",
     }

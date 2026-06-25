@@ -15,7 +15,7 @@ from ..tools import TOOL_SCHEMAS, executar_tool
 logger = logging.getLogger(__name__)
 
 
-SYSTEM_PROMPT = """Voce e o AssetIA, um assistente de TI que ajuda administradores a entender o inventario de dispositivos da rede da empresa.
+SYSTEM_PROMPT = """Voce e o ReconIA, um assistente de pentest e mapeamento de superficie de ataque que ajuda em avaliacoes de seguranca AUTORIZADAS da rede do cliente (inventario + portas + vulnerabilidades).
 
 Voce tem acesso a um banco de dados de dispositivos via ferramentas (function calling). USE as ferramentas para responder com dados reais — NUNCA invente informacoes.
 

@@ -1,10 +1,11 @@
 <h1 align="center">
-  AssetIA
+  🛡️ ReconIA
 </h1>
 
 <p align="center">
-  <strong>Inventário inteligente de TI com agente LLM.</strong><br/>
-  Descobre dispositivos na rede, cataloga automaticamente e responde a perguntas em linguagem natural.
+  <strong>Plataforma de pentest com IA.</strong><br/>
+  Descobre hosts na rede, mapeia a superfície de ataque (portas, serviços, CVE, score de risco)
+  e responde em linguagem natural — para avaliações de segurança <strong>autorizadas</strong>.
 </p>
 
 <p align="center">

@@ -35,3 +35,28 @@ def init_db():
     # Importa modelos antes de criar (registra metadata)
     from . import models  # noqa: F401
     Base.metadata.create_all(bind=engine)
+    _migrar_colunas()
+
+
+def _migrar_colunas():
+    """Migracao leve: adiciona colunas novas a tabelas existentes (ADD COLUMN idempotente).
+
+    create_all() so cria tabelas que faltam — nao altera tabelas ja existentes. Este passo
+    cobre colunas adicionadas depois (ex: pentest: devices.risco_score, portas.cves).
+    """
+    from sqlalchemy import inspect, text
+
+    novas = {
+        "devices": [("risco_score", "INTEGER")],
+        "portas": [("cves", "TEXT")],
+    }
+    insp = inspect(engine)
+    tabelas = set(insp.get_table_names())
+    with engine.begin() as conn:
+        for tabela, colunas in novas.items():
+            if tabela not in tabelas:
+                continue
+            existentes = {c["name"] for c in insp.get_columns(tabela)}
+            for nome, tipo in colunas:
+                if nome not in existentes:
+                    conn.execute(text(f"ALTER TABLE {tabela} ADD COLUMN {nome} {tipo}"))

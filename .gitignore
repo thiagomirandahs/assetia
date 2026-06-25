@@ -29,6 +29,10 @@ build/
 .vite/
 *.local
 
+# Artefatos de build TS (a fonte sao os .ts/.tsx)
+frontend/src/**/*.js
+*.tsbuildinfo
+
 # IDE
 .vscode/
 .idea/

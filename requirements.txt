@@ -20,7 +20,9 @@ groq>=0.13.0
 # Scanner de rede
 manuf>=1.1.5
 psutil>=6.1.0
+paramiko>=3.4.0  # checagem ativa de credenciais SSH
+python-socks[asyncio]>=2.4.0  # roteia scans por proxy SOCKS5 (Tor) — anonimato
 
 # Utilitarios
 python-dotenv>=1.0.0
-httpx>=0.27.0
+httpx[socks]>=0.27.0  # [socks] = suporte a proxy SOCKS no httpx (web checks via Tor)

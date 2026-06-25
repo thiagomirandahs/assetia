@@ -15,7 +15,7 @@ class Settings(BaseSettings):
 
     # Google Gemini (free tier: aistudio.google.com/apikey)
     gemini_api_key: str = ""
-    gemini_model: str = "gemini-2.0-flash"
+    gemini_model: str = "gemini-2.5-flash"
 
     # Groq (free tier MUITO generoso: console.groq.com/keys)
     groq_api_key: str = ""
@@ -33,6 +33,9 @@ class Settings(BaseSettings):
     default_network: str = "192.168.1.0/24"
     scan_timeout_seconds: int = 3
     max_parallel_pings: int = 64
+
+    # Anonimato (privacidade / OSINT autorizado) — ex: socks5://127.0.0.1:9050 (Tor)
+    socks_proxy: str = ""
 
     # Servidor
     host: str = "0.0.0.0"

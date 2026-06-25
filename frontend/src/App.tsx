@@ -5,6 +5,7 @@ import Alerts from "./pages/Alerts";
 import Chat from "./pages/Chat";
 import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
+import Pentest from "./pages/Pentest";
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -63,6 +64,7 @@ export default function App() {
           <Route path="/" element={user ? <Dashboard /> : <Navigate to="/login" />} />
           <Route path="/alertas" element={user ? <Alerts /> : <Navigate to="/login" />} />
           <Route path="/chat" element={user ? <Chat /> : <Navigate to="/login" />} />
+          <Route path="/pentest" element={user ? <Pentest /> : <Navigate to="/login" />} />
         </Routes>
       </main>
     </div>
@@ -91,12 +93,13 @@ function Topbar({ user, alertasNaoLidos, onLogout }: { user: User; alertasNaoLid
     <header className="bg-slate-800 border-b border-slate-700">
       <div className="max-w-7xl mx-auto px-6 py-3 flex items-center gap-4">
         <div className="flex items-center gap-2">
-          <span className="text-2xl">🛰️</span>
-          <span className="font-bold text-lg">AssetIA</span>
+          <span className="text-2xl">🛡️</span>
+          <span className="font-bold text-lg">ReconIA</span>
         </div>
         <nav className="flex items-center gap-1 ml-4">
           {link("/", "Dashboard")}
           {link("/alertas", "Alertas", alertasNaoLidos)}
+          {link("/pentest", "Pentest")}
           {link("/chat", "Chat IA")}
         </nav>
         <div className="ml-auto flex items-center gap-3">
