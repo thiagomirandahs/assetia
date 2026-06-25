@@ -20,7 +20,7 @@ ICONES = {"info": "ℹ️", "warning": "⚠️", "critical": "🚨"}
 
 
 def _formato_assunto(alert: Alert) -> str:
-    return f"[AssetIA] {ICONES.get(alert.severidade, '•')} {alert.titulo}"
+    return f"[ReconIA] {ICONES.get(alert.severidade, '•')} {alert.titulo}"
 
 
 def _formato_corpo(alert: Alert) -> str:

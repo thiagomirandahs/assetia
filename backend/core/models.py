@@ -50,6 +50,7 @@ class Device(Base):
     tipo: Mapped[str | None] = mapped_column(String(40), nullable=True)           # servidor/estacao/impressora/IoT
     vlan: Mapped[str | None] = mapped_column(String(20), nullable=True)
     tags: Mapped[str | None] = mapped_column(String(255), nullable=True)         # CSV simples
+    risco_score: Mapped[int | None] = mapped_column(Integer, nullable=True)       # 0-100 (pentest)
 
     online: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     primeira_visao: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
@@ -132,3 +133,39 @@ class Alert(Base):
         # evita duplicar alerta da mesma regra para o mesmo device em estado "nao lido"
         Index("ix_alerts_tenant_rule_device", "tenant_id", "rule_id", "device_id"),
     )
+
+
+# ===== Pentest / superficie de ataque =====
+
+class Porta(Base):
+    """Porta TCP aberta encontrada em um dispositivo (resultado de port scan)."""
+    __tablename__ = "portas"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    tenant_id: Mapped[int] = mapped_column(ForeignKey("tenants.id"), nullable=False, index=True)
+    device_id: Mapped[int] = mapped_column(ForeignKey("devices.id"), nullable=False, index=True)
+    porta: Mapped[int] = mapped_column(Integer, nullable=False)
+    protocolo: Mapped[str] = mapped_column(String(8), default="tcp", nullable=False)
+    servico: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    banner: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    risco: Mapped[str | None] = mapped_column(String(255), nullable=True)          # descricao do risco
+    severidade: Mapped[str | None] = mapped_column(String(20), nullable=True)      # info|warning|critical
+    cves: Mapped[str | None] = mapped_column(Text, nullable=True)                  # JSON: [{cve,descricao,severidade}]
+    visto_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+    __table_args__ = (
+        Index("ix_portas_tenant_device", "tenant_id", "device_id"),
+        Index("ix_portas_tenant_sev", "tenant_id", "severidade"),
+    )
+
+
+class SnapshotScan(Base):
+    """Foto das portas de um device num scan — para histórico e diff entre varreduras."""
+    __tablename__ = "snapshots_scan"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    tenant_id: Mapped[int] = mapped_column(ForeignKey("tenants.id"), nullable=False, index=True)
+    device_id: Mapped[int] = mapped_column(ForeignKey("devices.id"), nullable=False, index=True)
+    portas_json: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON: [{porta,servico,severidade}]
+    risco_score: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False, index=True)
+
+    __table_args__ = (Index("ix_snap_tenant_device", "tenant_id", "device_id"),)
