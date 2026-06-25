@@ -278,6 +278,13 @@ export interface BasResult {
   aviso: string;
 }
 
+export interface NetSample {
+  upload_bps: number;
+  download_bps: number;
+  upload_total: number;
+  download_total: number;
+}
+
 export interface Correcao {
   tema: string;
   ataques: string[];
@@ -476,6 +483,38 @@ export const api = {
   compliance: () => req<ComplianceResult>("/pentest/compliance"),
   patches: () => req<PatchesResult>("/pentest/patches"),
   bas: () => req<BasResult>("/pentest/bas", { method: "POST", body: JSON.stringify({ confirmar: true }) }),
+
+  // Monitor de rede ao vivo (SSE). Chama onSample a cada leitura; aborte via signal.
+  monitorStream: async (onSample: (s: NetSample) => void, signal?: AbortSignal): Promise<void> => {
+    const token = getToken();
+    const r = await fetch(`${BASE}/pentest/monitor/stream`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      signal,
+    });
+    if (!r.ok || !r.body) throw new Error((await r.text().catch(() => "")) || `HTTP ${r.status}`);
+    const reader = r.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      let sep: number;
+      while ((sep = buffer.indexOf("\n\n")) !== -1) {
+        const frame = buffer.slice(0, sep);
+        buffer = buffer.slice(sep + 2);
+        const linha = frame.split("\n").find((l) => l.startsWith("data:"));
+        if (!linha) continue;
+        const payload = linha.slice(5).trim();
+        if (!payload) continue;
+        try {
+          onSample(JSON.parse(payload) as NetSample);
+        } catch {
+          /* ignora */
+        }
+      }
+    }
+  },
 
   proxyStatus: () => req<ProxyStatus>("/pentest/proxy"),
 

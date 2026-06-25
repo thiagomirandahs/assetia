@@ -301,6 +301,14 @@ TOOL_SCHEMAS = [
         ),
         "input_schema": {"type": "object", "properties": {}},
     },
+    {
+        "name": "monitor_rede",
+        "description": (
+            "Mostra o THROUGHPUT de rede AGORA (upload e download em bytes/s) da máquina. Use para "
+            "'como está a banda', 'qual o upload/download agora', 'velocidade/consumo da rede em tempo real'."
+        ),
+        "input_schema": {"type": "object", "properties": {}},
+    },
 ]
 
 
@@ -357,6 +365,7 @@ def executar_tool(nome: str, args: dict, *, db: Session, tenant_id: int) -> dict
         "patch_advisor": _patch_advisor,
         "reputacao_ip": _reputacao_ip,
         "simular_ataque_bas": _simular_bas,
+        "monitor_rede": _monitor_rede,
     }
     h = handlers.get(nome)
     if not h:
@@ -788,3 +797,11 @@ def _simular_bas(_args, *, db: Session, tenant_id: int) -> dict:
     r = simular()
     r["mensagem"] = f"BAS: {r['total']} testes rodados, {r['detectados_bloqueados']} detectado(s)/bloqueado(s). {r['aviso']}"
     return r
+
+
+def _monitor_rede(_args, *, db: Session, tenant_id: int) -> dict:
+    """Throughput de rede agora (upload/download)."""
+    from ..scanner.netmon import amostra
+    a = amostra(1.0)
+    a["mensagem"] = f"Agora: ↑ {a['upload_bps'] / 1024:.1f} KB/s · ↓ {a['download_bps'] / 1024:.1f} KB/s"
+    return a
