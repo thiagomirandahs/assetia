@@ -33,7 +33,7 @@
   - [ ] `historico_de_um_dispositivo`
   - [ ] `dispositivos_em_uma_vlan`
   - [ ] `dispositivos_offline_mais_de_X_dias`
-- [ ] **Streaming SSE** das respostas do agente no frontend
+- [x] **Streaming SSE** das respostas do agente no frontend
 
 ## v0.3 — Agentes coletores
 
