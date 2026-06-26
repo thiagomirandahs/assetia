@@ -156,6 +156,17 @@ export interface SuperficieAtaque {
   hosts_mais_arriscados: HostArriscado[];
 }
 
+export interface DashboardData {
+  risco_medio: number;
+  hosts_avaliados: number;
+  buckets: { critico: number; alto: number; medio: number; baixo: number };
+  portas_abertas: number;
+  cves: number;
+  criticas: number;
+  exposicoes_criticas: ExposicaoCritica[];
+  hosts_mais_arriscados: HostArriscado[];
+}
+
 export interface RedeLocal {
   interface: string;
   ip_local: string;
@@ -478,6 +489,7 @@ export const api = {
       body: JSON.stringify(alvo),
     }),
 
+  dashboard: () => req<DashboardData>("/pentest/dashboard"),
   baseline: () => req<BaselineResult>("/pentest/baseline"),
   attackPath: () => req<AttackPathResult>("/pentest/attack-path"),
   compliance: () => req<ComplianceResult>("/pentest/compliance"),

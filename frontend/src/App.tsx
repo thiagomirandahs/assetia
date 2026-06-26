@@ -3,9 +3,13 @@ import { Link, Navigate, Route, Routes, useLocation, useNavigate } from "react-r
 import { api, getToken, setToken, User } from "./api";
 import Alerts from "./pages/Alerts";
 import Chat from "./pages/Chat";
+import Analises from "./pages/Analises";
 import Dashboard from "./pages/Dashboard";
+import Home from "./pages/Home";
 import Login from "./pages/Login";
+import Monitor from "./pages/Monitor";
 import Pentest from "./pages/Pentest";
+import Relatorios from "./pages/Relatorios";
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -61,10 +65,15 @@ export default function App() {
             path="/login"
             element={user ? <Navigate to="/" /> : <Login onLogin={(u) => { setUser(u); recarregarBadge(); }} />}
           />
-          <Route path="/" element={user ? <Dashboard /> : <Navigate to="/login" />} />
+          <Route path="/" element={user ? <Home /> : <Navigate to="/login" />} />
+          <Route path="/avaliacao" element={user ? <Pentest /> : <Navigate to="/login" />} />
+          <Route path="/pentest" element={user ? <Pentest /> : <Navigate to="/login" />} />
+          <Route path="/analises" element={user ? <Analises /> : <Navigate to="/login" />} />
+          <Route path="/monitor" element={user ? <Monitor /> : <Navigate to="/login" />} />
+          <Route path="/relatorios" element={user ? <Relatorios /> : <Navigate to="/login" />} />
+          <Route path="/inventario" element={user ? <Dashboard /> : <Navigate to="/login" />} />
           <Route path="/alertas" element={user ? <Alerts /> : <Navigate to="/login" />} />
           <Route path="/chat" element={user ? <Chat /> : <Navigate to="/login" />} />
-          <Route path="/pentest" element={user ? <Pentest /> : <Navigate to="/login" />} />
         </Routes>
       </main>
     </div>
@@ -97,10 +106,13 @@ function Topbar({ user, alertasNaoLidos, onLogout }: { user: User; alertasNaoLid
           <span className="font-bold text-lg">ReconIA</span>
         </div>
         <nav className="flex items-center gap-1 ml-4">
-          {link("/", "Dashboard")}
+          {link("/", "Visão geral")}
+          {link("/avaliacao", "Avaliação")}
+          {link("/analises", "Análises")}
+          {link("/monitor", "Monitor")}
+          {link("/relatorios", "Relatórios")}
           {link("/alertas", "Alertas", alertasNaoLidos)}
-          {link("/pentest", "Pentest")}
-          {link("/chat", "Chat IA")}
+          {link("/chat", "Copiloto")}
         </nav>
         <div className="ml-auto flex items-center gap-3">
           <span className="text-sm text-slate-400">{user.email}</span>
