@@ -158,6 +158,22 @@ class Porta(Base):
     )
 
 
+class EventoLog(Base):
+    """Evento de log ingerido pelo SOC (syslog, Windows Event, firewall...)."""
+    __tablename__ = "eventos_log"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    tenant_id: Mapped[int] = mapped_column(ForeignKey("tenants.id"), nullable=False, index=True)
+    ts: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False, index=True)
+    fonte: Mapped[str] = mapped_column(String(60), nullable=False)         # windows, syslog, firewall...
+    host: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    severidade: Mapped[str] = mapped_column(String(20), default="info", nullable=False)  # info|warning|critical
+    mensagem: Mapped[str] = mapped_column(Text, nullable=False)
+    raw: Mapped[str | None] = mapped_column(Text, nullable=True)
+    criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+    __table_args__ = (Index("ix_eventos_tenant_ts", "tenant_id", "ts"),)
+
+
 class SnapshotScan(Base):
     """Foto das portas de um device num scan — para histórico e diff entre varreduras."""
     __tablename__ = "snapshots_scan"
