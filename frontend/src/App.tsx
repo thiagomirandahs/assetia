@@ -7,6 +7,7 @@ import Analises from "./pages/Analises";
 import Dashboard from "./pages/Dashboard";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
+import Mapa from "./pages/Mapa";
 import Monitor from "./pages/Monitor";
 import Pentest from "./pages/Pentest";
 import Relatorios from "./pages/Relatorios";
@@ -70,6 +71,7 @@ export default function App() {
           <Route path="/pentest" element={user ? <Pentest /> : <Navigate to="/login" />} />
           <Route path="/analises" element={user ? <Analises /> : <Navigate to="/login" />} />
           <Route path="/monitor" element={user ? <Monitor /> : <Navigate to="/login" />} />
+          <Route path="/mapa" element={user ? <Mapa /> : <Navigate to="/login" />} />
           <Route path="/relatorios" element={user ? <Relatorios /> : <Navigate to="/login" />} />
           <Route path="/inventario" element={user ? <Dashboard /> : <Navigate to="/login" />} />
           <Route path="/alertas" element={user ? <Alerts /> : <Navigate to="/login" />} />
@@ -109,6 +111,7 @@ function Topbar({ user, alertasNaoLidos, onLogout }: { user: User; alertasNaoLid
           {link("/", "Visão geral")}
           {link("/avaliacao", "Avaliação")}
           {link("/analises", "Análises")}
+          {link("/mapa", "Mapa")}
           {link("/monitor", "Monitor")}
           {link("/relatorios", "Relatórios")}
           {link("/alertas", "Alertas", alertasNaoLidos)}
