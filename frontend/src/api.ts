@@ -184,6 +184,15 @@ export interface MapaRede {
   total: number;
 }
 
+export interface EventoLog {
+  id: number;
+  ts: string | null;
+  fonte: string;
+  host: string | null;
+  severidade: "info" | "warning" | "critical";
+  mensagem: string;
+}
+
 export interface RedeLocal {
   interface: string;
   ip_local: string;
@@ -508,6 +517,39 @@ export const api = {
 
   dashboard: () => req<DashboardData>("/pentest/dashboard"),
   mapa: () => req<MapaRede>("/pentest/mapa"),
+
+  socEventos: () => req<{ total: number; eventos: EventoLog[] }>("/soc/eventos?limit=100"),
+  socSeedDemo: () => req<{ ingeridos: number; mensagem: string }>("/soc/seed-demo", { method: "POST" }),
+  socStream: async (onEvent: (e: EventoLog) => void, signal?: AbortSignal): Promise<void> => {
+    const token = getToken();
+    const r = await fetch(`${BASE}/soc/stream`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      signal,
+    });
+    if (!r.ok || !r.body) throw new Error((await r.text().catch(() => "")) || `HTTP ${r.status}`);
+    const reader = r.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      let sep: number;
+      while ((sep = buffer.indexOf("\n\n")) !== -1) {
+        const frame = buffer.slice(0, sep);
+        buffer = buffer.slice(sep + 2);
+        const linha = frame.split("\n").find((l) => l.startsWith("data:"));
+        if (!linha) continue;
+        const payload = linha.slice(5).trim();
+        if (!payload) continue;
+        try {
+          onEvent(JSON.parse(payload) as EventoLog);
+        } catch {
+          /* ignora */
+        }
+      }
+    }
+  },
   baseline: () => req<BaselineResult>("/pentest/baseline"),
   attackPath: () => req<AttackPathResult>("/pentest/attack-path"),
   compliance: () => req<ComplianceResult>("/pentest/compliance"),

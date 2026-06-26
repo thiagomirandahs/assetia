@@ -309,6 +309,19 @@ TOOL_SCHEMAS = [
         ),
         "input_schema": {"type": "object", "properties": {}},
     },
+    {
+        "name": "eventos_recentes",
+        "description": (
+            "SOC: retorna os eventos de log recentes (Windows/syslog/firewall) ingeridos, para você "
+            "CORRELACIONAR e identificar incidentes (ex: brute force → port scan → dump de credenciais → "
+            "movimento lateral). Use para 'o que está acontecendo nos logs', 'tem ataque em andamento', "
+            "'analise os eventos de segurança', 'monte a timeline do incidente'. Monte a narrativa em ordem."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {"limit": {"type": "integer", "description": "Quantos eventos (padrão 50)"}},
+        },
+    },
 ]
 
 
@@ -366,6 +379,7 @@ def executar_tool(nome: str, args: dict, *, db: Session, tenant_id: int) -> dict
         "reputacao_ip": _reputacao_ip,
         "simular_ataque_bas": _simular_bas,
         "monitor_rede": _monitor_rede,
+        "eventos_recentes": _eventos_recentes,
     }
     h = handlers.get(nome)
     if not h:
@@ -805,3 +819,21 @@ def _monitor_rede(_args, *, db: Session, tenant_id: int) -> dict:
     a = amostra(1.0)
     a["mensagem"] = f"Agora: ↑ {a['upload_bps'] / 1024:.1f} KB/s · ↓ {a['download_bps'] / 1024:.1f} KB/s"
     return a
+
+
+def _eventos_recentes(args: dict, *, db: Session, tenant_id: int) -> dict:
+    """SOC: eventos de log recentes para o agente correlacionar."""
+    from ..core.models import EventoLog
+    limit = int(args.get("limit", 50))
+    rows = (
+        db.query(EventoLog)
+        .filter(EventoLog.tenant_id == tenant_id)
+        .order_by(EventoLog.id.desc())
+        .limit(limit)
+        .all()
+    )
+    eventos = [{
+        "ts": r.ts.isoformat() if r.ts else None, "fonte": r.fonte,
+        "host": r.host, "severidade": r.severidade, "mensagem": r.mensagem,
+    } for r in reversed(rows)]
+    return {"total": len(eventos), "eventos": eventos}

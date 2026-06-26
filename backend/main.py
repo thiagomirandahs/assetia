@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .api import alerts, auth, chat, devices, pentest, scans
+from .api import alerts, auth, chat, devices, pentest, scans, soc
 from .core.config import get_settings
 from .core.database import init_db
 
@@ -37,6 +37,7 @@ app.include_router(scans.router, prefix="/api/scans", tags=["scans"])
 app.include_router(chat.router, prefix="/api/chat", tags=["chat"])
 app.include_router(alerts.router, prefix="/api/alerts", tags=["alerts"])
 app.include_router(pentest.router, prefix="/api/pentest", tags=["pentest"])
+app.include_router(soc.router, prefix="/api/soc", tags=["soc"])
 
 
 @app.get("/")
