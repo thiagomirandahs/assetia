@@ -167,6 +167,23 @@ export interface DashboardData {
   hosts_mais_arriscados: HostArriscado[];
 }
 
+export interface MapaHost {
+  ip: string;
+  hostname: string | null;
+  fabricante: string | null;
+  so: string | null;
+  tipo: string | null;
+  risco_score: number | null;
+  online: boolean;
+  eh_gateway: boolean;
+}
+
+export interface MapaRede {
+  gateway: string | null;
+  hosts: MapaHost[];
+  total: number;
+}
+
 export interface RedeLocal {
   interface: string;
   ip_local: string;
@@ -490,6 +507,7 @@ export const api = {
     }),
 
   dashboard: () => req<DashboardData>("/pentest/dashboard"),
+  mapa: () => req<MapaRede>("/pentest/mapa"),
   baseline: () => req<BaselineResult>("/pentest/baseline"),
   attackPath: () => req<AttackPathResult>("/pentest/attack-path"),
   compliance: () => req<ComplianceResult>("/pentest/compliance"),
